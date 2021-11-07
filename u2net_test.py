@@ -53,17 +53,37 @@ def save_output(image_name,pred,d_dir):
 
 def main():
 
+    import argparse
+    from pathlib import Path
     # --------- 1. get image path and name ---------
     model_name='u2net'#u2netp
 
+    #root = "/home/cwang/data_temp/image_recons_test/sugar_black_bg"
+    #root = "/Datasets/cwang/seg_data/beer/beer1_2021-10-10_21-30-41/e2calib"
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--root', required=True)
 
+    args = parser.parse_args()
+    image_dir = args.root
+    image_dir = Path(image_dir)
 
-    image_dir = os.path.join(os.getcwd(), 'test_data', 'test_images')
-    prediction_dir = os.path.join(os.getcwd(), 'test_data', model_name + '_results' + os.sep)
+    all_images_dir = Path(image_dir).parent
+
+    #prediction_dir = os.path.join(parent_dir, "masks" + os.sep) 
+    prediction_dir = os.path.join(all_images_dir.parent, all_images_dir.name+"_masks", image_dir.name + os.sep)
+
+    if not os.path.exists(prediction_dir):
+        os.makedirs(prediction_dir)
+    else:
+        assert os.path.isdir(prediction_dir)
+
+    #image_dir = os.path.join(os.getcwd(), 'test_data', 'test_images')
+    #prediction_dir = os.path.join(os.getcwd(), 'test_data', model_name + '_results' + os.sep)
     model_dir = os.path.join(os.getcwd(), 'saved_models', model_name, model_name + '.pth')
 
-    img_name_list = glob.glob(image_dir + os.sep + '*')
-    print(img_name_list)
+    image_dir = str(image_dir)
+    img_name_list = glob.glob(image_dir + os.sep + '*.png')
+    print("Number of images is ", len(img_name_list))
 
     # --------- 2. dataloader ---------
     #1. dataloader
@@ -110,6 +130,8 @@ def main():
         # normalization
         pred = d1[:,0,:,:]
         pred = normPRED(pred)
+
+        pred = (pred > 0.8).float()
 
         # save results to test_results folder
         if not os.path.exists(prediction_dir):
